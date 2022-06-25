@@ -14,6 +14,7 @@ plLists(pl);
 export type EnforcedDependency = {
   workspace: Workspace;
   dependencyIdent: Ident;
+  dependencyLatest: string  | null;
   dependencyRange: string | null;
   dependencyType: DependencyType;
 };
@@ -250,8 +251,9 @@ export class Constraints {
   private async genEnforcedDependencies(session: Session) {
     const enforcedDependencies: Array<EnforcedDependency> = [];
 
-    for await (const answer of session.makeQuery(`workspace(WorkspaceCwd), dependency_type(DependencyType), gen_enforced_dependency(WorkspaceCwd, DependencyIdent, DependencyRange, DependencyType).`)) {
+    for await (const answer of session.makeQuery(`workspace(WorkspaceCwd), dependency_type(DependencyType), gen_enforced_dependency(WorkspaceCwd, DependencyIdent, DependencyLatest, DependencyRange, DependencyType).`)) {
       const workspaceCwd = ppath.resolve(this.project.cwd, parseLink(answer.links.WorkspaceCwd) as PortablePath);
+      const dependencyLatest = parseLink(answer.links.DependencyLatest);
       const dependencyRawIdent = parseLink(answer.links.DependencyIdent);
       const dependencyRange = parseLink(answer.links.DependencyRange);
       const dependencyType = parseLink(answer.links.DependencyType) as DependencyType;
@@ -262,7 +264,7 @@ export class Constraints {
       const workspace = this.project.getWorkspaceByCwd(workspaceCwd);
       const dependencyIdent = structUtils.parseIdent(dependencyRawIdent);
 
-      enforcedDependencies.push({workspace, dependencyIdent, dependencyRange, dependencyType});
+      enforcedDependencies.push({workspace, dependencyIdent, dependencyLatest, dependencyRange, dependencyType});
     }
 
     return miscUtils.sortMap(enforcedDependencies, [
